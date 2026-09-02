@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 产品图片生成器</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px 16px; background: #f6f7fb; color: #1b2436; font: 15px/1.5 "PingFang SC", "Microsoft YaHei", sans-serif; }
+    main { width: min(100%, 720px); margin: auto; padding: 30px; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px #17203314; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    .tip { margin: 0 0 24px; color: #72809a; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: block; font-weight: 700; }
+    input, textarea { width: 100%; margin-top: 6px; padding: 11px 12px; border: 1px solid #dce2ee; border-radius: 9px; outline: none; font: inherit; }
+    input:focus, textarea:focus { border-color: #3b6fe8; box-shadow: 0 0 0 3px #3b6fe81c; }
+    .full { grid-column: 1 / -1; }
+    textarea { min-height: 74px; resize: vertical; }
+    button { width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 9px; background: #3568e8; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+    button:disabled { opacity: .65; cursor: wait; }
+    #status { min-height: 22px; margin: 14px 0 0; color: #657086; }
+    #result { display: none; margin-top: 18px; }
+    #result img { display: block; width: 100%; max-height: 620px; object-fit: contain; border-radius: 12px; background: #f6f7fb; }
+    #error { color: #b42332; white-space: pre-wrap; }
+    .notice { margin-top: 18px; color: #8b6c18; font-size: 12px; }
+    @media (max-width: 560px) { main { padding: 22px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AI 产品图片生成器</h1>
+    <p class="tip">填写产品信息，生成一张产品宣传图。</p>
+
+    <form id="form">
+      <div class="grid">
+        <label>产品名称<input name="product_name" placeholder="例如：智能保温杯" required></label>
+        <label>产品特点<input name="product_features" placeholder="例如：显示实时水温、长效保温" required></label>
+        <label>目标市场<input name="target_market" placeholder="例如：年轻上班族" required></label>
+        <label>产品风格<input name="product_style" placeholder="例如：极简科技感" required></label>
+        <label class="full">不要出现的内容（选填）<input name="no_text" placeholder="例如：不要人物、不要文字"></label>
+        <label class="full">其他说明（选填）<textarea name="beizhu" placeholder="选填"></textarea></label>
+      </div>
+      <button id="button" type="submit">生成图片</button>
+    </form>
+
+    <p id="status" role="status"></p>
+    <section id="result"><img id="image" alt="AI 生成的产品图片"></section>
+    <p id="error"></p>
+    <p class="notice">仅供个人测试。请在代码顶部填写 Dify API Key。</p>
+  </main>
+
+  <script>
+    // 
+    const DIFY_API_KEY = "app-VzRMN4TL3B40FiRO9rjY13gX";
+    const API_URL = "https://api.dify.ai/v1/workflows/run";
+
+    const form = document.getElementById("form");
+    const button = document.getElementById("button");
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const image = document.getElementById("image");
+    const error = document.getElementById("error");
+
+    function findImageUrl(value) {
+      if (!value) return "";
+      if (typeof value === "string") return /^https?:\/\//.test(value) ? value : "";
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const url = findImageUrl(item);
+          if (url) return url;
+        }
+      }
+      if (typeof value === "object") {
+        if (value.url || value.remote_url || value.download_url) {
+          return value.url || value.remote_url || value.download_url;
+        }
+        for (const item of Object.values(value)) {
+          const url = findImageUrl(item);
+          if (url) return url;
+        }
+      }
+      return "";
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.textContent = "";
+      result.style.display = "none";
+
+      if (DIFY_API_KEY.includes("在这里填写")) {
+        error.textContent = "请先在 HTML 顶部填写 Dify API Key。";
+        return;
+      }
+
+      const values = Object.fromEntries(new FormData(form).entries());
+      button.disabled = true;
+      button.textContent = "生成中…";
+      status.textContent = "图片生成中，预计15秒，请稍候……";
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${DIFY_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ inputs: values, response_mode: "blocking", user: `image-web-${Date.now()}` })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `请求失败（HTTP ${response.status}）`);
+
+        const url = findImageUrl(data.data?.outputs);
+        if (!url) throw new Error("Workflow 已完成，但没有找到图片链接。请检查结束节点是否输出图片文件。");
+        image.src = url;
+        result.style.display = "block";
+        status.textContent = "生成完成";
+      } catch (e) {
+        error.textContent = `生成失败：${e.message}`;
+        status.textContent = "";
+      } finally {
+        button.disabled = false;
+        button.textContent = "生成图片";
+      }
+    });
+  </script>
+</body>
+</html>

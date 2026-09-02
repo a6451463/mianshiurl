@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI销售线索分析助手</title>
+
+<style>
+
+body{
+    font-family: "Microsoft YaHei", Arial;
+    background:#f5f7fa;
+    margin:0;
+    padding:40px;
+}
+
+
+.container{
+    width:700px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.08);
+}
+
+
+h2{
+    text-align:center;
+    color:#333;
+}
+
+
+label{
+    display:block;
+    margin-top:15px;
+    color:#555;
+}
+
+
+input,textarea{
+
+    width:100%;
+    box-sizing:border-box;
+
+    margin-top:8px;
+    padding:10px;
+
+    border:1px solid #ddd;
+    border-radius:6px;
+
+    font-size:14px;
+}
+
+
+textarea{
+
+    height:150px;
+    resize:none;
+
+}
+
+
+button{
+
+    margin-top:20px;
+
+    width:100%;
+
+    padding:12px;
+
+    background:#1677ff;
+
+    color:white;
+
+    border:none;
+
+    border-radius:6px;
+
+    font-size:16px;
+
+    cursor:pointer;
+
+}
+
+
+button:hover{
+
+    background:#4096ff;
+
+}
+
+
+.result-box{
+
+    margin-top:20px;
+
+    padding:20px;
+
+    background:#fafafa;
+
+    border-radius:8px;
+
+    border:1px solid #eee;
+
+
+    /*关键*/
+    white-space:pre-line;
+
+    line-height:1.8;
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<h2>AI销售线索分析助手</h2>
+
+
+<label>公司名称</label>
+<input id="company" placeholder="请输入客户公司">
+
+
+<label>所属行业</label>
+<input id="industry" placeholder="请输入行业">
+
+
+<label>客户需求</label>
+<textarea id="requirement" placeholder="请输入客户需求"></textarea>
+
+
+<button onclick="send()">
+开始分析
+</button>
+
+
+<h3>AI分析结果</h3>
+
+
+<div id="result" class="result-box">
+
+等待分析...
+
+</div>
+
+
+
+</div>
+
+
+
+<script>
+
+
+function send(){
+
+
+let company =
+document.getElementById("company").value;
+
+
+let industry =
+document.getElementById("industry").value;
+
+
+let requirement =
+document.getElementById("requirement").value;
+
+
+
+document.getElementById("result").innerHTML="您的api试用已过期，请付费.....";
+
+
+
+fetch("https://a6451463.app.n8n.cloud/webhook/4f8f6a84-7bf3-4168-8b38-09efbf292508",{
+
+method:"POST",
+
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+
+body:JSON.stringify({
+
+company:company,
+
+industry:industry,
+
+requirement:requirement
+
+})
+
+
+})
+
+
+.then(res=>res.json())
+
+
+.then(data=>{
+
+
+document.getElementById("result").innerHTML=data[0].output;
+
+
+})
+
+
+}
+
+
+
+</script>
+
+
+</body>
+
+</html>
